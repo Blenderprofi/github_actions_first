@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+
+jobs:
+  app_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Python check app
+        run: |
+          python --version
+          pip --version
+          pip install --no-cache-dir -r requirements.txt
+          python -m py_compile app.py
+          python -c "import flask, redis, psycopg2; print('imports are okay!')"
+        
+
+
+
+
+
+
+

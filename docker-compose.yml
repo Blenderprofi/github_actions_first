@@ -1,0 +1,44 @@
+services:
+  flask_app:
+    build: .
+    image: flask_app:v1
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    volumes:
+      - "db_data:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 4
+    restart: unless-stopped
+
+  redis:
+    image: redis:6-alpine
+    env_file:
+      - .env
+    volumes:
+      - "redis_data:/data"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 4
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  redis_data:
