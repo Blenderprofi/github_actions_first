@@ -40,6 +40,8 @@ jobs:
     steps:
       - name: Repo checkout
         uses: actions/checkout@v4
+      - name: Normalize image name
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - name: docker login
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
