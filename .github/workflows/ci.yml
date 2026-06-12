@@ -1,36 +1,56 @@
 name: CI
 
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_TAG: ${{ github.sha }}
+  IMAGE_NAME: ${{ github.repository }}
+
 on:
   push:
     branches:
-      - master
       - main
+      - master
   pull_request:
 
 jobs:
   app_check:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Repo checkout
         uses: actions/checkout@v4
-
-      - name: Set up Python
+      - name: Setup python
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-
-      - name: Python check app
+      - name: App check
         run: |
-          python --version
           pip --version
-          pip install --no-cache-dir -r requirements.txt
+          python --version
           python -m py_compile app.py
-          python -c "import flask, redis, psycopg2; print('imports are okay!')"
-        
-
-
-
-
-
-
-
+          pip install --no-cache-dir -r requirements.txt
+          python -c "import flask, psycopg2, redis; print('imports are okay!')"
+  build_push:
+    needs: app_check
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || github.refs == 'refs/heads/main'
+    steps:
+      - name: Repo checkout
+        uses: actions/checkout@v4
+      - name: docker login
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+      - name: Image info
+        run: |
+          echo "Image registry: $REGISTRY"
+          echo "Image tag: $IMAGE_TAG"
+          echo "Image name: $IMAGE_NAME"
+      - name: docker build
+        run: |
+          docker build -t "$REGISTRY/$IMAGE_NAME:$IMAGE_TAG" .
+      - name: docker push
+        run: |
+          docker push "$REGISTRY/$IMAGE_NAME:$IMAGE_TAG"
