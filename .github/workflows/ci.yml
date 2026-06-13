@@ -36,7 +36,7 @@ jobs:
   build_push:
     needs: app_check
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' || github.refs == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
     steps:
       - name: Repo checkout
         uses: actions/checkout@v4
@@ -56,3 +56,16 @@ jobs:
       - name: docker push
         run: |
           docker push "$REGISTRY/$IMAGE_NAME:$IMAGE_TAG"
+      - name: artifacts
+        run: |
+          mkdir -p artifacts
+          echo "Registry: $REGISTRY" > artifacts/image_info.txt
+          echo "Image name: $IMAGE_NAME" >> artifacts/image_info.txt
+          echo "Image tag: $IMAGE_TAG" >> artifacts/image_info.txt
+          echo "Docker version: $(docker --version)" > artifacts/docker_info.txt
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: image_info
+          path: artifacts/
+
